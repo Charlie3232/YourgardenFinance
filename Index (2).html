@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>小樣兒園藝 成本管理</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            /* POP MART 風格配色 */
+            --bg-color: #F4F6F8;
+            --card-bg: #FFFFFF;
+            
+            /* 漸層主色調 (綠色系) */
+            --gradient-primary: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            --gradient-btn: linear-gradient(90deg, #00b09b 0%, #96c93d 100%);
+            
+            --text-dark: #2D3436;
+            --text-gray: #636E72;
+            
+            --radius-box: 24px;
+            --radius-input: 16px;
+            --shadow-float: 0 15px 35px rgba(0,0,0,0.08);
+        }
+
+        body { 
+            /* ★★★ 全站套用 Zen Maru Gothic ★★★ */
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background-color: var(--bg-color); 
+            color: var(--text-dark); 
+            margin: 0; 
+            padding: 0; 
+            padding-bottom: 120px;
+            -webkit-font-smoothing: antialiased;
+            font-weight: 500; /* 預設稍微粗一點，比較可愛 */
+        }
+
+        /* 背景裝飾 */
+        body::before {
+            content: ''; position: fixed; top: -100px; left: -50px; width: 300px; height: 300px;
+            background: #55efc4; filter: blur(120px); opacity: 0.15; z-index: -1; border-radius: 50%;
+        }
+        body::after {
+            content: ''; position: fixed; bottom: 10%; right: -50px; width: 250px; height: 250px;
+            background: #ffeaa7; filter: blur(100px); opacity: 0.2; z-index: -1; border-radius: 50%;
+        }
+
+        .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+        
+        /* 標題設計 */
+        .app-header { 
+            position: relative;
+            text-align: center; 
+            margin-bottom: 30px; 
+            margin-top: 10px;
+            padding-bottom: 10px;
+        }
+        .app-header h1 { 
+            margin: 0; 
+            font-family: 'Zen Maru Gothic', sans-serif;
+            font-weight: 900; /* 極粗體 */
+            font-size: 32px; 
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+            /* 讓標題有點可愛的陰影 */
+            filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.05));
+        }
+        .app-header span { 
+            font-size: 14px; 
+            color: #b2bec3; 
+            letter-spacing: 2px; 
+            font-weight: 700; 
+            display: block;
+            margin-top: 5px;
+            font-family: 'Outfit', sans-serif; /* 英文副標題用 Outfit 比較俐落 */
+        }
+        
+        .author-signature {
+            position: absolute;
+            bottom: -5px;
+            right: 0;
+            font-size: 12px;
+            color: #dcdde1;
+            transform: rotate(-5deg);
+            font-family: 'Outfit', cursive;
+        }
+
+        /* 卡片設計 */
+        .card { 
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: var(--radius-box); 
+            padding: 25px; 
+            box-shadow: var(--shadow-float); 
+            margin-bottom: 25px; 
+            border: 1px solid rgba(255,255,255,0.6);
+        }
+        
+        .form-row { margin-bottom: 20px; }
+        
+        label { 
+            display: block; margin-bottom: 8px; font-weight: 700; font-size: 14px; 
+            color: var(--text-gray); letter-spacing: 1px;
+        }
+
+        input, select { 
+            width: 100%; padding: 15px; border: none; border-radius: var(--radius-input); 
+            font-size: 16px; background: #F0F2F5; box-sizing: border-box;
+            font-family: 'Zen Maru Gothic', sans-serif; 
+            color: var(--text-dark); transition: 0.2s;
+            font-weight: 500;
+        }
+        input:focus, select:focus { 
+            outline: none; background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(17, 153, 142, 0.2);
+        }
+        .clickable-input { 
+            cursor: pointer; background-color: #f0fff4 !important; 
+            color: #11998e; font-weight: 900; text-align: right; font-size: 20px;
+        }
+
+        /* 按鈕設計 */
+        .submit-btn { 
+            width: 100%; background: var(--gradient-btn); color: white; border: none; 
+            padding: 16px; border-radius: 50px; font-size: 18px; font-weight: 700; 
+            cursor: pointer; box-shadow: 0 10px 20px rgba(150, 201, 61, 0.3); 
+            transition: transform 0.1s; 
+            font-family: 'Zen Maru Gothic', sans-serif; 
+            letter-spacing: 1px;
+        }
+        .submit-btn:active { transform: scale(0.98); }
+        .submit-btn:disabled { background: #dfe6e9; box-shadow: none; color: #b2bec3; }
+
+        /* 圖表區塊 */
+        .chart-wrapper { 
+            margin-bottom: 25px; background: white; border-radius: 20px; padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+        .chart-title { 
+            font-size: 18px; font-weight: 700; color: #2D3436; margin-bottom: 15px; 
+            display: flex; align-items: center;
+        }
+        .chart-title::before {
+            content: ''; display: inline-block; width: 10px; height: 10px;
+            border-radius: 50%; margin-right: 8px;
+        }
+        .chart-box { position: relative; height: 260px; width: 100%; }
+        
+        .stats-loading { text-align: center; padding: 50px; color: var(--text-gray); }
+
+        /* 分頁切換 */
+        .tab-content { display: none; animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .tab-content.active { display: block; }
+        @keyframes popIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+        /* 懸浮導航列 */
+        .nav-bar { 
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            width: 85%; max-width: 400px;
+            background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            display: flex; justify-content: space-around; padding: 15px;
+            border-radius: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 100; 
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        .nav-item { 
+            flex: 1; display: flex; flex-direction: row; align-items: center; justify-content: center; 
+            color: #B2BEC3; font-size: 15px; cursor: pointer; transition: 0.3s; font-weight: 700;
+            border-radius: 30px; padding: 8px;
+        }
+        .nav-item.active { 
+            color: white; background: #2D3436; box-shadow: 0 4px 10px rgba(45, 52, 54, 0.3);
+        }
+        .nav-icon { font-size: 18px; margin-right: 6px; }
+
+        /* 遮罩與彈窗 */
+        .overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(3px); z-index: 9998; }
+        .bottom-modal { 
+            display: none; position: fixed; bottom: 0; left: 0; width: 100%; background: white; 
+            border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 30px 20px; 
+            box-sizing: border-box; z-index: 9999; box-shadow: 0 -10px 40px rgba(0,0,0,0.1);
+        }
+        
+        /* 鍵盤 */
+        .keypad-header { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: 20px; color: var(--text-dark); }
+        .keypad-display-screen { 
+            background: #F0F2F5; border: none; border-radius: 16px; padding: 20px; 
+            margin-bottom: 25px; text-align: right; font-size: 42px; font-weight: 700; 
+            color: var(--text-dark); letter-spacing: -1px; font-family: 'Outfit', monospace;
+        }
+        .keypad-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        .key-btn { 
+            background: #FFFFFF; border: none; padding: 18px; font-size: 24px; font-weight: 700; 
+            border-radius: 16px; color: var(--text-dark); cursor: pointer; box-shadow: 0 4px 0 #E0E0E0; 
+            transition: 0.1s; font-family: 'Zen Maru Gothic', sans-serif;
+        }
+        .key-btn:active { transform: translateY(4px); box-shadow: none; background: #F8F8F8; }
+        .key-btn.confirm { background: var(--text-dark); color: white; grid-column: span 3; box-shadow: 0 4px 0 #000; }
+        .key-btn.confirm:active { background: #000; }
+        .key-btn.clear { background: #FFEAA7; color: #D35400; box-shadow: 0 4px 0 #FDCB6E; }
+        .key-btn.backspace { background: #DFE6E9; box-shadow: 0 4px 0 #B2BEC3; }
+        .password-mode .keypad-display-screen { -webkit-text-security: disc; letter-spacing: 5px; color: #20bf6b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="app-header">
+        <h1>小樣兒園藝</h1>
+        <span>成本管理系統</span>
+        <div class="author-signature">Author Charlie</div>
+    </div>
+
+    <div id="tab-record" class="tab-content active">
+        <div class="card">
+            <div class="form-row">
+                <label>DATE / 日期</label>
+                <input type="date" id="recordDate">
+            </div>
+            <div class="form-row">
+                <label>CATEGORY / 類別</label>
+                <select id="category"></select>
+            </div>
+            <div class="form-row">
+                <label>AMOUNT / 金額</label>
+                <input type="number" class="clickable-input" id="price" placeholder="$0" readonly onclick="openKeypad('price')">
+            </div>
+            <div class="form-row">
+                <label>NOTE / 備註</label>
+                <input type="text" id="note" placeholder="輸入備註...">
+            </div>
+            <button type="button" class="submit-btn" id="submitBtn" onclick="initiateSubmit()">確認記帳 ✨</button>
+        </div>
+    </div>
+
+    <div id="tab-stats" class="tab-content">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin:0; color:#2D3436;">Dashboard</h2>
+                <button type="button" onclick="loadStats()" style="font-size:12px; padding:8px 16px; background:#F0F2F5; border:none; border-radius:20px; font-weight:bold; color:#636E72;">🔄 刷新</button>
+            </div>
+
+            <div id="stats-msg" class="stats-loading">Loading Data...<br>⏳</div>
+
+            <div class="chart-wrapper">
+                <div class="chart-title" style="color: #1e8449;">
+                    <span style="background:#1e8449;"></span> 營收 (Revenue)
+                </div>
+                <div class="chart-box"><canvas id="chartRevenue"></canvas></div>
+            </div>
+
+            <div class="chart-wrapper">
+                <div class="chart-title" style="color: #2ed573;">
+                    <span style="background:#2ed573;"></span> 利潤 (Profit)
+                </div>
+                <div class="chart-box"><canvas id="chartProfit"></canvas></div>
+            </div>
+
+            <div class="chart-wrapper">
+                <div class="chart-title" style="color: #fa8231;">
+                    <span style="background:#fa8231;"></span> 成本 (Cost)
+                </div>
+                <div class="chart-box"><canvas id="chartCost"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="nav-bar">
+    <div class="nav-item active" onclick="switchTab('record')">
+        <div class="nav-icon">✏️</div>
+        <div>記帳</div>
+    </div>
+    <div class="nav-item" onclick="switchTab('stats')">
+        <div class="nav-icon">📊</div>
+        <div>報表</div>
+    </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeKeypad()"></div>
+<div id="keypad-modal" class="bottom-modal">
+    <div id="keypad-title" class="keypad-header">輸入金額</div>
+    <div id="keypad-screen" class="keypad-display-screen">0</div>
+    <div class="keypad-grid">
+        <button class="key-btn" onclick="pressKey(7)">7</button><button class="key-btn" onclick="pressKey(8)">8</button><button class="key-btn" onclick="pressKey(9)">9</button>
+        <button class="key-btn" onclick="pressKey(4)">4</button><button class="key-btn" onclick="pressKey(5)">5</button><button class="key-btn" onclick="pressKey(6)">6</button>
+        <button class="key-btn" onclick="pressKey(1)">1</button><button class="key-btn" onclick="pressKey(2)">2</button><button class="key-btn" onclick="pressKey(3)">3</button>
+        <button class="key-btn clear" onclick="clearKey()">C</button><button class="key-btn" onclick="pressKey(0)">0</button><button class="key-btn backspace" onclick="backspaceKey()">⌫</button>
+        <button class="key-btn confirm" onclick="confirmKeypad()">OK</button>
+    </div>
+</div>
+
+<script>
+    // ★★★ 請確認您的 GAS 網址是否正確 ★★★
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzyJZPruu8GIW2EH7O8whPFo86rZ_G7upIjHhAUc4PMLUX-t2RNxXUmuUzl0AcHsQVg/exec"; 
+
+    const costCategories = ["植物叫貨", "運費", "店面成本", "盆器叫貨", "介質費用", "廣告", "人事", "其他", "營業收入"];
+
+    Chart.register(ChartDataLabels);
+
+    let charts = { revenue: null, profit: null, cost: null };
+
+    window.onload = function() {
+        document.getElementById('recordDate').valueAsDate = new Date();
+        const catSelect = document.getElementById('category');
+        costCategories.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c; opt.innerText = c;
+            catSelect.appendChild(opt);
+        });
+    };
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabName).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        const navIndex = tabName === 'record' ? 0 : 1;
+        document.querySelectorAll('.nav-item')[navIndex].classList.add('active');
+
+        if (tabName === 'stats') {
+            if (!charts.revenue && !charts.profit && !charts.cost) {
+                loadStats();
+            }
+        }
+    }
+
+    function loadStats() {
+        const msgDiv = document.getElementById('stats-msg');
+        msgDiv.innerHTML = 'Data Loading...<br>⏳';
+        msgDiv.style.display = 'block';
+
+        if(charts.revenue) charts.revenue.destroy();
+        if(charts.profit) charts.profit.destroy();
+        if(charts.cost) charts.cost.destroy();
+        charts = { revenue: null, profit: null, cost: null };
+
+        fetch(SCRIPT_URL + '?op=get_stats')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                msgDiv.style.display = 'none';
+                
+                // 1. 營收: 深綠色
+                renderSingleChart('chartRevenue', data.datasets[0], '#1e8449', '#27ae60', 'revenue');
+                // 2. 利潤: 淺綠色
+                renderSingleChart('chartProfit', data.datasets[1], '#2ed573', '#7bed9f', 'profit');
+                // 3. 成本: 橘色
+                renderSingleChart('chartCost', data.datasets[2], '#fa8231', '#fed330', 'cost');
+            } else {
+                msgDiv.innerHTML = '❌ Error: ' + data.message;
+            }
+        })
+        .catch(err => {
+            msgDiv.innerHTML = '❌ Network Error';
+            console.error(err);
+        });
+    }
+
+    function renderSingleChart(canvasId, dataset, color, bgColor, chartKey) {
+        const ctx = document.getElementById(canvasId).getContext('2d');
+        
+        let gradient = ctx.createLinearGradient(0, 0, 0, 300);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(1, bgColor);
+
+        charts[chartKey] = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+                datasets: [{
+                    label: dataset.label,
+                    data: dataset.data,
+                    backgroundColor: gradient, 
+                    borderRadius: 8, 
+                    barPercentage: 0.6 
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 30 } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#2D3436',
+                        titleFont: { family: 'Zen Maru Gothic' },
+                        bodyFont: { family: 'Zen Maru Gothic', size: 14 },
+                        padding: 10,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) { return '$ ' + context.raw.toLocaleString(); }
+                        }
+                    },
+                    datalabels: {
+                        display: true,
+                        align: 'end',
+                        anchor: 'end',
+                        offset: -5,
+                        color: color, 
+                        font: { weight: '800', size: 11, family: 'Zen Maru Gothic' },
+                        formatter: function(value) {
+                            return value === 0 ? '' : value.toLocaleString(); 
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { display: false },
+                        grace: '10%',
+                        ticks: { font: { family: 'Zen Maru Gothic' } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { family: 'Zen Maru Gothic', size: 11 } }
+                    }
+                }
+            }
+        });
+    }
+
+    // 計算機邏輯
+    let currentInputId = null; let tempValue = ""; let isPasswordMode = false;
+    function openKeypad(mode) {
+        document.getElementById('overlay').style.display = 'block';
+        const modal = document.getElementById('keypad-modal');
+        modal.style.display = 'block';
+        const title = document.getElementById('keypad-title');
+        if (mode === 'password') {
+            isPasswordMode = true; title.innerText = "🔒 PASSWORD"; title.style.color = "#FF7675"; modal.classList.add('password-mode'); tempValue = "";
+        } else {
+            isPasswordMode = false; currentInputId = 'price'; title.innerText = "AMOUNT"; title.style.color = "#2D3436"; modal.classList.remove('password-mode');
+            const val = document.getElementById('price').value; tempValue = (val === '0' || val === '') ? '' : val;
+        }
+        updateScreen();
+    }
+    function closeKeypad() { document.getElementById('overlay').style.display = 'none'; document.getElementById('keypad-modal').style.display = 'none'; }
+    function pressKey(num) { tempValue += num; updateScreen(); }
+    function backspaceKey() { tempValue = tempValue.substring(0, tempValue.length - 1); updateScreen(); }
+    function clearKey() { tempValue = ''; updateScreen(); }
+    function updateScreen() { const screen = document.getElementById('keypad-screen'); screen.innerText = (isPasswordMode) ? (tempValue === '' ? '' : tempValue) : (tempValue === '' ? '0' : tempValue); }
+    function confirmKeypad() {
+        if (isPasswordMode) {
+            if (tempValue === '1332') { closeKeypad(); realSubmit(); } else { alert("❌ Wrong Password!"); tempValue = ''; updateScreen(); }
+        } else { document.getElementById(currentInputId).value = tempValue; closeKeypad(); }
+    }
+    function initiateSubmit() { const price = document.getElementById('price').value; if (!price) { alert("Please enter amount!"); return; } openKeypad('password'); }
+    function realSubmit() {
+        const btn = document.getElementById('submitBtn');
+        if(!SCRIPT_URL.startsWith("http")) { alert("Please set GAS URL!"); return; }
+        btn.disabled = true; btn.innerText = "Sending...";
+        const data = { date: document.getElementById('recordDate').value, category: document.getElementById('category').value, price: document.getElementById('price').value, note: document.getElementById('note').value };
+        fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) }).then(() => {
+            alert("✅ Success!"); document.getElementById('price').value = ''; document.getElementById('note').value = ''; btn.disabled = false; btn.innerText = "確認記帳 ✨";
+        }).catch(err => { alert("❌ Error：" + err); btn.disabled = false; btn.innerText = "確認記帳 ✨"; });
+    }
+</script>
+
+</body>
+</html>
